@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>안전보건 자료 분석</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <h1>안전보건 자료 분석</h1>
+      <p class="privacy">🔒 올린 파일은 이 컴퓨터의 브라우저 안에서만 분석되며 어디에도 전송·저장되지 않습니다.</p>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-view="msds" role="tab">물질안전보건자료(MSDS)</button>
+      <button class="tab" data-view="health" role="tab">건강진단 사후관리</button>
+      <button class="tab" data-view="stress" role="tab">직무스트레스</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="view-msds" class="view">
+      <label class="drop" id="drop">
+        <input type="file" id="file" accept="application/pdf,.pdf" multiple hidden>
+        <strong>MSDS PDF 파일을 여기에 끌어다 놓거나 눌러서 선택하세요</strong>
+        <span>여러 파일, 여러 제품을 한 PDF로 묶은 파일 모두 됩니다. 스캔한 이미지 PDF는 읽지 못합니다.</span>
+      </label>
+      <p id="status" class="status" aria-live="polite"></p>
+
+      <div id="result" hidden>
+        <div class="toolbar">
+          <div class="exports">
+            <button id="btn-tpl" class="primary">MSDS 취급현황표 받기</button>
+            <button id="btn-xlsx" class="primary">엑셀 보고서 받기</button>
+            <button id="btn-pdf" class="primary">PDF 보고서 받기</button>
+            <button id="btn-clear" class="ghost">모두 지우기</button>
+          </div>
+          <label class="setting">오래된 자료 기준
+            <select id="age-limit">
+              <option value="3" selected>최종 개정 후 3년</option>
+              <option value="5">최종 개정 후 5년</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="panel" id="tpl-panel">
+          <h2>회사 양식(MSDS_상세분석표)에 채우기</h2>
+          <p class="sub">PDF만 올려도 기본 회사 양식에 채워 드립니다. 이미 작성 중인 양식에 이어서 넣으려면 그 엑셀을 선택하세요(입력된 마지막 행 다음부터 채웁니다). 글꼴·행높이·V~AG열 수식은 그대로 둡니다.</p>
+          <div class="tpl-actions">
+            <label class="ghost file-btn"><input type="file" id="tpl-file" accept=".xlsx,.xlsm" hidden>다른 양식 선택</label>
+            <span id="tpl-name" class="small"></span>
+          </div>
+          <h3 class="h3">그림문자 확인</h3>
+          <p class="sub">그림문자는 PDF 속 그림이라 글자로 읽을 수 없어 H코드로 먼저 체크해 두었습니다. H코드가 있어도 그림이 인쇄되지 않은 경우가 있으니, "원본 보기"로 실제 그림과 대조해 주세요.</p>
+          <div id="picto-preview" class="preview" hidden></div>
+          <div id="picto-table" class="scroll-x"></div>
+          <h3 class="h3">확인할 항목 <span id="notes-count" class="small"></span></h3>
+          <ul id="tpl-notes" class="notes"></ul>
+        </div>
+
+        <div class="tiles" id="tiles"></div>
+
+        <div class="panel">
+          <h2>유해성 종류별 제품 수</h2>
+          <p class="sub">H코드(유해·위험문구)로 판단한 GHS 그림문자 기준</p>
+          <div id="chart" class="bars"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>제품 목록</h2>
+            <div class="seg" role="tablist">
+              <button class="seg-btn active" data-list="products">제품별</button>
+              <button class="seg-btn" data-list="chemicals">성분별</button>
+            </div>
+          </div>
+          <div class="filters" id="filters"></div>
+          <input id="search" class="search" type="search" placeholder="제품명, 회사, 성분, CAS 번호로 찾기">
+          <div id="list"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-health" class="view" hidden>
+      <div class="empty">
+        <h2>건강진단 사후관리소견서</h2>
+        <p>판정(A·C1·C2·D1·D2·DN·R)별 인원, 업무적합성, 사후관리 조치가 필요한 사람 명단을 정리하는 화면입니다.</p>
+        <p>샘플 소견서(엑셀 또는 PDF)를 받으면 그 양식에 맞춰 만들겠습니다.</p>
+      </div>
+    </section>
+
+    <section id="view-stress" class="view" hidden>
+      <div class="empty">
+        <h2>직무스트레스 설문</h2>
+        <p>한국형 직무스트레스 측정도구(KOSS) 기준으로 영역별 점수, 성별 참고치 비교, 고위험군 비율, 부서별 비교를 보여줄 화면입니다.</p>
+        <p>설문 응답을 모은 엑셀 파일 샘플을 받으면 만들겠습니다.</p>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+</div>
+
+<script src="vendor/pdf.min.js"></script>
+<script src="vendor/xlsx.full.min.js"></script>
+<script src="vendor/pdfmake.min.js"></script>
+<script src="vendor/jszip.min.js"></script>
+<script src="js/pdftext.js"></script>
+<script src="js/msds-parser.js"></script>
+<script src="js/save.js"></script>
+<script src="js/msds-report.js"></script>
+<script src="js/msds-template.js"></script>
+<script src="templates/msds-template.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
